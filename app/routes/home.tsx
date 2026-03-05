@@ -53,9 +53,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       {/* Nav */}
       <nav className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
         <span className="text-xl font-bold tracking-tight">🛰 SatMarket</span>
-        <button className="text-sm text-blue-400 border border-blue-500 px-4 py-1.5 rounded-full hover:bg-blue-500 hover:text-white transition-colors">
+        <Link to="/list" className="text-sm text-blue-400 border border-blue-500 px-4 py-1.5 rounded-full hover:bg-blue-500 hover:text-white transition-colors">
           List Your Satellite
-        </button>
+        </Link>
       </nav>
 
       <div className="max-w-6xl mx-auto px-6 py-16">

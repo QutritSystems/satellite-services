@@ -24,6 +24,27 @@ export const WaitlistSchema = Schema.Struct({
   email: Schema.String.pipe(Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)),
 });
 
+export const ListSatelliteSchema = Schema.Struct({
+  companyName: Schema.NonEmptyString,
+  contactEmail: Schema.String.pipe(Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)),
+  satelliteName: Schema.NonEmptyString,
+  satelliteType: Schema.Literal("Imaging", "Communication", "Weather", "Radar"),
+  orbit: Schema.NonEmptyString,
+  spec: Schema.NonEmptyString,
+  pricePerHour: Schema.NumberFromString.pipe(Schema.greaterThan(0)),
+  description: Schema.String,
+});
+
+export type ListSatelliteForm = Schema.Schema.Type<typeof ListSatelliteSchema>;
+
+export const validateListSatelliteForm = (data: Record<string, unknown>) =>
+  Schema.decodeUnknown(ListSatelliteSchema)(data).pipe(
+    Effect.mapError((e) => ({
+      type: "ValidationError" as const,
+      message: e.message,
+    }))
+  );
+
 // --- Services ---
 
 export const getAllSatellites = Effect.succeed(satellites);
