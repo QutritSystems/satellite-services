@@ -1,6 +1,9 @@
 import { useState } from "react";
+import { Effect } from "effect";
+import { Form, Link, useActionData, useNavigation } from "react-router";
 import type { Route } from "./+types/home";
 import { satellites, type SatelliteType } from "../data/satellites";
+import { validateWaitlistEmail } from "../services/satellite";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -13,6 +16,21 @@ export async function loader() {
   return { satellites };
 }
 
+export async function action({ request }: Route.ActionArgs) {
+  const formData = await request.formData();
+  const raw = Object.fromEntries(formData);
+
+  const result = await Effect.runPromise(Effect.either(validateWaitlistEmail(raw)));
+
+  if (result._tag === "Left") {
+    return { success: false, error: "Please enter a valid email address." };
+  }
+
+  // In a real app: save to DB here
+  console.log("Waitlist signup:", result.right.email);
+  return { success: true, error: null };
+}
+
 const typeFilters = ["All", "Imaging", "Communication", "Weather", "Radar"] as const;
 
 const availabilityColors = {
@@ -23,8 +41,10 @@ const availabilityColors = {
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   const { satellites } = loaderData;
+  const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
   const [filter, setFilter] = useState<"All" | SatelliteType>("All");
-  const [email, setEmail] = useState("");
+  const isSubmitting = navigation.state === "submitting";
 
   const filtered = filter === "All" ? satellites : satellites.filter((s) => s.type === filter);
 
@@ -48,24 +68,33 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             The first marketplace platform for satellite service procurement —
             for businesses, researchers, and curious minds.
           </p>
-          <form
-            onSubmit={(e) => { e.preventDefault(); setEmail(""); }}
-            className="flex gap-2 max-w-md mx-auto"
-          >
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email for early access"
-              className="flex-1 px-4 py-2.5 rounded-lg bg-white/10 border border-white/20 placeholder-slate-500 focus:outline-none focus:border-blue-400"
-            />
-            <button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-400 px-6 py-2.5 rounded-lg font-semibold transition-colors"
-            >
-              Join Waitlist
-            </button>
-          </form>
+          {actionData?.success ? (
+            <div className="max-w-md mx-auto bg-green-400/10 border border-green-400/20 text-green-400 rounded-xl px-4 py-3 text-sm font-medium">
+              You're on the waitlist! We'll be in touch soon.
+            </div>
+          ) : (
+            <Form method="post" className="flex flex-col items-center gap-2 max-w-md mx-auto">
+              {actionData?.error && (
+                <p className="text-red-400 text-sm self-start">{actionData.error}</p>
+              )}
+              <div className="flex gap-2 w-full">
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="Enter your email for early access"
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-white/10 border border-white/20 placeholder-slate-500 focus:outline-none focus:border-blue-400"
+                />
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-blue-500 hover:bg-blue-400 disabled:opacity-50 px-6 py-2.5 rounded-lg font-semibold transition-colors"
+                >
+                  {isSubmitting ? "..." : "Join Waitlist"}
+                </button>
+              </div>
+            </Form>
+          )}
         </div>
 
         {/* Satellite Marketplace */}
@@ -95,9 +124,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           {/* Grid */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filtered.map((sat) => (
-              <div
+              <Link
                 key={sat.id}
-                className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-blue-500/50 hover:bg-white/8 transition-all cursor-pointer group"
+                to={`/satellites/${sat.id}`}
+                className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-blue-500/50 hover:bg-white/[0.08] transition-all group block"
               >
                 <div className="flex justify-between items-start mb-4">
                   <span className="text-xs font-semibold uppercase tracking-widest text-blue-400">
@@ -122,11 +152,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                       <span className="text-sm font-normal text-slate-400">/hr</span>
                     </p>
                   </div>
-                  <button className="bg-blue-500/20 hover:bg-blue-500 text-blue-400 hover:text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all">
-                    Book Now
-                  </button>
+                  <span className="bg-blue-500/20 group-hover:bg-blue-500 text-blue-400 group-hover:text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all">
+                    View →
+                  </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
