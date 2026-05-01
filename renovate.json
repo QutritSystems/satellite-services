@@ -1,16 +1,4 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
-  ],
-  "timezone": "Asia/Taipei",
-  "schedule": ["at any time"],
-  "packageRules": [
-    {
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "all non-major dependencies",
-      "groupSlug": "all-non-major",
-      "automerge": false
-    }
-  ]
+  "extends": ["github>QutritSystems/renovate-config"]
 }
